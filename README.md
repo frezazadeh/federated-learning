@@ -11,13 +11,13 @@ This repository provides an advanced, object-oriented, and extensible framework 
 
 This framework is built upon several key design patterns to ensure scalability and maintainability:
 
-1.  **Object-Oriented Structure**: The entire process is managed by `Server` and `Client` objects, encapsulating state and logic for clear, modular code.
+1.  **Separation of Concerns**: Cleanly divided modules for data loading, model definition, client logic, server orchestration, and optimizers.
 
-2.  **Strategy Design Pattern**: FL algorithms (e.g., FedAvg, FedProx) are implemented as interchangeable "Aggregation Strategies." You can add new algorithms without modifying the core server workflow, promoting clean separation of concerns.
+2. **Multi-Algorithm Support**: Switch between FedAvg, FedDANE, FedProx, and FedSGD with a single CLI flag.
 
-3.  **Configuration-Driven Experiments**: All hyperparameters and settings are managed through `YAML` configuration files. This decouples the experiment setup from the source code, allowing for easy, reproducible runs.
+3. **Reproducibility**: Fixed random seeds and configurable hyperparameters via a dataclass.
 
-4.  **Centralized Logging**: Uses Python's native `logging` module for structured and informative console output.
+4. **Extensibility**: Add new architectures or optimizers without touching core orchestration code.
 
 ## 📂 Framework Structure
 
