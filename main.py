@@ -1,41 +1,35 @@
 import os
 import argparse
 import torch
+from config import FLConfig
+from data_loader import load_mnist_partitions
 from server import Server
-from data import get_loaders
-from config import Config
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Federated Learning CLI")
+    p.add_argument("--algo", type=str, default="fedavg",
+                   choices=["fedavg", "feddane", "fedprox", "fedsgd"])
+    return p.parse_args()
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True,
-                        help='Path to config file')
-    parser.add_argument('--algo', type=str, default='fedavg',
-                        help='Federated learning algorithm to use')
-    cli = parser.parse_args()
+    cli = parse_args()
+    config = FLConfig(algorithm=cli.algo)
+    device = torch.device("cuda" if (config.use_cuda and torch.cuda.is_available()) else "cpu")
 
-    # load configuration
-    config = Config(cli.config)
+    # load your per-client training loaders and a central test loader
+    train_ldrs, test_ldr = load_mnist_partitions(config)
 
-    # prepare data loaders
-    train_loaders, test_loader = get_loaders(config)
+    # spin up the federated server
+    server = Server(config, train_ldrs, test_ldr, device)
+    server.run()
 
-    # choose device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # initialize server
-    server = Server(config, train_loaders, test_loader, device)
-
-    # run federated rounds
-    for round_idx in range(config.rounds):
-        server.round(round_idx)
-
-    # ensure save directory exists
+    # ensure the target directory exists
     save_path = config.save_path.format(algorithm=cli.algo)
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    # save the trained global model
+    # save the global model's state dict
     torch.save(server.global_model.state_dict(), save_path)
-    print(f"Model saved to {save_path}")
+    print(f"Saved global model to {save_path}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
