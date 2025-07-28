@@ -41,7 +41,7 @@ federated-learning-framework/
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/federated-learning-framework.git](https://github.com/YOUR_USERNAME/federated-learning-framework.git)
+    git clone https://github.com/frezazadeh/federated-learning.git
     cd federated-learning-framework
     ```
 
