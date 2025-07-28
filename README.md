@@ -23,19 +23,19 @@ This framework is built upon several key design patterns to ensure scalability a
 
 The framework is organized for maximum clarity and extensibility:
 
+
 ```
-federated-learning-framework/
-├── configs/              # Experiment configuration files (YAML)
-├── src/                  # Main source code
-│   ├── server.py         # Core Server class orchestrating the FL process
-│   ├── client.py         # Client class for local training
-│   ├── data_loader.py    # Data loading and partitioning logic
-│   ├── models.py         # Neural network architectures
-│   ├── strategies/       # Directory for aggregation strategy classes
-│   └── utils.py          # Logging and evaluation helpers
-├── main.py               # Main entry point to run an experiment
-└── requirements.txt      # Project dependencies
+federated-learning-tutorial/
+├── main.py             # Main script to run the FL simulation
+├── config.py           # All hyperparameters and settings
+├── models.py           # CNN model definitions
+├── data_utils.py       # Data loading and distribution logic
+├── client.py           # Defines the client's behavior
+├── server.py           # Defines the server's orchestration logic
+├── requirements.txt    # Project dependencies
+└── README.md           # You are here!
 ```
+
 
 ## 🛠️ Setup and Installation
 
