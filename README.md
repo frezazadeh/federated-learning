@@ -56,26 +56,33 @@ federated_learning/
     pip install -r requirements.txt
     ```
 
-## ▶️ Running an Experiment
+## Usage
 
-Experiments are run by passing a configuration file to `main.py`.
+Run experiments via the command line using `main.py`:
 
-1.  **Configure your experiment:**
-    Modify `configs/fed_prox_config.yaml` to set your desired parameters (e.g., change the `strategy` to `fedavg`, adjust the learning rate, or change the number of rounds).
+```bash
+python main.py --algo <algorithm_name>
+```
 
-2.  **Execute the run:**
-    ```bash
-    python main.py --config_path configs/fed_prox_config.yaml
-    ```
+### Selecting an Algorithm
 
-The framework will handle the rest: setting up the server, clients, and strategy, and running the full federated training process.
+Available options for `--algo`:
+- `fedavg`
+- `feddane`
+- `fedprox`
+- `fedsgd`
 
-## Extending the Framework
+## Algorithms
 
-Adding a new algorithm is simple:
+- **FedAvg:** Clients perform multiple local SGD epochs and the server averages model parameters.  
+- **FedProx:** Adds a proximal term µ‖w−w_global‖² to local objectives to limit divergence.  
+- **FedDANE:** Combines a Newton-like correction with a proximal term for faster convergence.  
+- **FedSGD:** Clients compute gradients on their full local data and the server applies the averaged gradient once per round.
 
-1.  Create a new file in `src/strategies/`, for example `my_new_strategy.py`.
-2.  Inside, create a class that inherits from `BaseAggregationStrategy` and implement the `aggregate` method.
-3.  Update the `strategy` field in your `YAML` config file to the name of your new strategy.
+For details, see the respective classes in [`optimizers.py`](optimizers.py) and the orchestration logic in [`server.py`](server.py).
 
-That's it! The framework is designed for this kind of easy extension.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
