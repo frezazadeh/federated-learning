@@ -25,15 +25,15 @@ The framework is organized for maximum clarity and extensibility:
 
 
 ```
-federated-learning-tutorial/
-├── main.py             # Main script to run the FL simulation
-├── config.py           # All hyperparameters and settings
-├── models.py           # CNN model definitions
-├── data_utils.py       # Data loading and distribution logic
-├── client.py           # Defines the client's behavior
-├── server.py           # Defines the server's orchestration logic
-├── requirements.txt    # Project dependencies
-└── README.md           
+federated_learning/
+├── config.py           # Hyperparameters & experiment settings
+├── data_loader.py      # MNIST download & client partitioning
+├── model.py            # CNN architecture (BatchNorm, Dropout)
+├── utils.py            # Model & gradient averaging helpers
+├── optimizers.py       # Implementations of FedAvg, FedDANE, FedProx, FedSGD
+├── client.py           # Encapsulates client-side training logic
+├── server.py           # Federated learning orchestration
+└── main.py             # CLI entry point to run experiments           
 ```
 
 
