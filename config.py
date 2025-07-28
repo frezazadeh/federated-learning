@@ -1,18 +1,18 @@
-import torch
+# config.py
+from dataclasses import dataclass
 
-class Config:
-    def __init__(self):
-        self.ROUNDS = 5
-        self.CLIENTS_PER_ROUND = 7
-        self.TOTAL_CLIENTS = 50
-        self.LOCAL_EPOCHS = 3
-        self.BATCH_SIZE = 32
-        self.LEARNING_RATE = 0.01
-        self.MU = 0.1  # For FedProx
-        self.DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.DATASET = 'FashionMNIST'
-        # Set to 'non-iid' to simulate a more realistic scenario
-        self.DATA_DISTRIBUTION = 'iid' 
-
-# Instantiate the configuration
-cfg = Config()
+@dataclass
+class FLConfig:
+    """Federated learning experiment settings."""
+    algorithm: str = "fedavg"  # fedavg | feddane | fedprox | fedsgd
+    num_clients: int = 10
+    frac: float = 0.9         # fraction of clients per round
+    drop_rate: float = 0.1    # simulate stragglers
+    num_rounds: int = 5
+    local_epochs: int = 5
+    batch_size: int = 64
+    lr: float = 0.01
+    mu: float = 0.1           # FedProx & FedDANE proximal term
+    seed: int = 42
+    use_cuda: bool = False
+    save_path: str = "models/{algorithm}.pt"
