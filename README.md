@@ -33,7 +33,7 @@ federated-learning-tutorial/
 ├── client.py           # Defines the client's behavior
 ├── server.py           # Defines the server's orchestration logic
 ├── requirements.txt    # Project dependencies
-└── README.md           # You are here!
+└── README.md           
 ```
 
 
