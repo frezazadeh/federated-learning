@@ -17,7 +17,7 @@ This framework is built upon several key design patterns to ensure scalability a
 
 3. **Reproducibility**: Fixed random seeds and configurable hyperparameters via a dataclass.
 
-4. **Extensibility**: Add new architectures or optimizers without touching core orchestration code.
+4. **Extensibility**: Add new architectures or optimizers.
 
 ## 📂 Framework Structure
 
