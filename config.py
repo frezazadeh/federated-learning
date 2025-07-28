@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class FLConfig:
     """Federated learning experiment settings."""
     algorithm: str = "fedavg"  # fedavg | feddane | fedprox | fedsgd
-    num_clients: int = 10
+    num_clients: int = 5
     frac: float = 0.9         # fraction of clients per round
     drop_rate: float = 0.1    # simulate stragglers
     num_rounds: int = 5
