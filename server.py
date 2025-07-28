@@ -1,9 +1,10 @@
 import random
 import torch
 import logging
+from tqdm import trange, tqdm
 
 class Server:
-    """Orchestrates federated rounds for any algorithm."""
+    """Orchestrates federated rounds for any algorithm, with progress bars."""
     def __init__(self, config, train_loaders, test_loader, device):
         from model import CNNModel
         from client import Client
@@ -13,10 +14,13 @@ class Server:
         self.device      = device
         self.test_loader = test_loader
         self.global_model= CNNModel().to(device)
+
+        # create Client objects with IDs
         self.clients     = [
-            Client(CNNModel(), loader, config, device)
-            for loader in train_loaders
+            Client(CNNModel(), loader, config, device, client_id=i)
+            for i, loader in enumerate(train_loaders, start=1)
         ]
+
         self.avg_models  = average_models
         self.avg_grads   = average_gradients
         logging.basicConfig(level=logging.INFO)
@@ -35,28 +39,36 @@ class Server:
 
     def run(self):
         torch.manual_seed(self.config.seed)
-        for rnd in range(1, self.config.num_rounds + 1):
+
+        # outer loop with a progress bar over rounds
+        for rnd in trange(1, self.config.num_rounds + 1,
+                          desc="Federated Rounds", unit="round"):
             # select & drop
             m        = max(1, int(self.config.frac * len(self.clients)))
             selected = random.sample(self.clients, m)
             active   = random.sample(selected, max(1, int((1-self.config.drop_rate)*m)))
 
-            # for gradient schemes, compute global grads first
+            # For gradient-based methods, compute averaged grads first
             global_grads = None
             if self.config.algorithm in ("fedsgd", "feddane"):
                 temp_models = [c.model for c in selected]
                 self.global_model = self.avg_grads(self.global_model, temp_models)
                 global_grads = [p.grad for p in self.global_model.parameters()]
 
-            # local updates
-            local_models = [
-                c.train(global_model=self.global_model, global_grads=global_grads)
-                for c in active
-            ]
+            # train each active client with progress bar
+            local_models = []
+            for client in tqdm(active,
+                               desc=f"Round {rnd} Clients",
+                               leave=False,
+                               unit="client"):
+                local_models.append(client.train(
+                    global_model=self.global_model,
+                    global_grads=global_grads
+                ))
 
             # aggregate for FedAvg, FedProx, FedDANE
             if self.config.algorithm in ("fedavg", "fedprox", "feddane"):
                 self.global_model = self.avg_models(self.global_model, local_models)
 
-            logging.info(f"Round {rnd} complete.")
+            logging.info(f"⭑ Round {rnd} complete.")
             self.evaluate()
