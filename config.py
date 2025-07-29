@@ -1,17 +1,15 @@
-from dataclasses import dataclass
-
-@dataclass
 class FLConfig:
-    """Federated learning experiment settings."""
-    algorithm: str = "fedavg"  # fedavg | feddane | fedprox | fedsgd
-    num_clients: int = 5
-    frac: float = 0.9         # fraction of clients per round
-    drop_rate: float = 0.1    # simulate stragglers
-    num_rounds: int = 5
-    local_epochs: int = 5
-    batch_size: int = 64
-    lr: float = 0.01
-    mu: float = 0.1           # FedProx & FedDANE proximal term
-    seed: int = 42
-    use_cuda: bool = False
-    save_path: str = "models/{algorithm}.pt"
+    def __init__(self, algorithm: str = "fedavg", num_clients: int = 3):
+        # Federated learning settings
+        self.algorithm = algorithm
+        self.num_clients = num_clients
+        self.num_rounds = 5            # Total communication rounds
+        self.local_epochs = 1          # Local epochs per client
+        self.frac = 1.0                # Fraction of clients each round
+        self.local_lr = 0.01           # Learning rate for local updates
+        self.global_lr = 1.0           # (Not used in FedAvg) global learning rate
+        self.batch_size = 32           # Batch size for training
+        self.use_cuda = True           # Use GPU if available
+
+        # Where to save the global model
+        self.save_path = "models/global_{algorithm}.pth"
