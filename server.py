@@ -1,74 +1,68 @@
-import random
+import copy
 import torch
-import logging
-from tqdm import trange, tqdm
+import torch.nn.functional as F
+from model import MNIST_CNN
 
 class Server:
-    """Orchestrates federated rounds for any algorithm, with progress bars."""
     def __init__(self, config, train_loaders, test_loader, device):
-        from model import CNNModel
-        from client import Client
-        from utils import average_models, average_gradients
-
-        self.config      = config
-        self.device      = device
+        self.config = config
+        self.train_loaders = train_loaders
         self.test_loader = test_loader
-        self.global_model= CNNModel().to(device)
+        self.device = device
 
-        # create Client objects with IDs
-        self.clients     = [
-            Client(CNNModel(), loader, config, device, client_id=i)
-            for i, loader in enumerate(train_loaders, start=1)
-        ]
+        # Initialize global model
+        self.global_model = MNIST_CNN().to(self.device)
 
-        self.avg_models  = average_models
-        self.avg_grads   = average_gradients
-        logging.basicConfig(level=logging.INFO)
+    def select_clients(self):
+        num_selected = max(1, int(self.config.frac * len(self.train_loaders)))
+        return list(range(num_selected))  # simple: first frac fraction
+
+    def train_clients(self, selected_clients):
+        local_models = []
+        for idx in selected_clients:
+            local_model = copy.deepcopy(self.global_model)
+            local_model.train()
+            optimizer = torch.optim.SGD(local_model.parameters(), lr=self.config.local_lr)
+
+            for _ in range(self.config.local_epochs):
+                for data, target in self.train_loaders[idx]:
+                    data, target = data.to(self.device), target.to(self.device)
+                    optimizer.zero_grad()
+                    output = local_model(data)
+                    loss = F.cross_entropy(output, target)
+                    loss.backward()
+                    optimizer.step()
+
+            local_models.append(local_model)
+        return local_models
+
+    def avg_grads(self, global_model, local_models):
+        # Average model parameters (FedAvg)
+        global_dict = global_model.state_dict()
+        for key in global_dict.keys():
+            stacked = torch.stack([lm.state_dict()[key].float() for lm in local_models], dim=0)
+            global_dict[key] = stacked.mean(dim=0)
+        global_model.load_state_dict(global_dict)
+        return global_model
 
     def evaluate(self):
         self.global_model.eval()
-        correct = total = 0
+        correct = 0
+        total = 0
         with torch.no_grad():
             for data, target in self.test_loader:
                 data, target = data.to(self.device), target.to(self.device)
-                pred = self.global_model(data).argmax(1)
+                output = self.global_model(data)
+                pred = output.argmax(dim=1)
                 correct += (pred == target).sum().item()
-                total   += target.size(0)
-        acc = 100 * correct / total
-        logging.info(f"Global Accuracy: {acc:.2f}%")
+                total += target.size(0)
+        acc = 100.0 * correct / total
+        return acc
 
     def run(self):
-        torch.manual_seed(self.config.seed)
-
-        # outer loop with a progress bar over rounds
-        for rnd in trange(1, self.config.num_rounds + 1,
-                          desc="Federated Rounds", unit="round"):
-            # select & drop
-            m        = max(1, int(self.config.frac * len(self.clients)))
-            selected = random.sample(self.clients, m)
-            active   = random.sample(selected, max(1, int((1-self.config.drop_rate)*m)))
-
-            # For gradient-based methods, compute averaged grads first
-            global_grads = None
-            if self.config.algorithm in ("fedsgd", "feddane"):
-                temp_models = [c.model for c in selected]
-                self.global_model = self.avg_grads(self.global_model, temp_models)
-                global_grads = [p.grad for p in self.global_model.parameters()]
-
-            # train each active client with progress bar
-            local_models = []
-            for client in tqdm(active,
-                               desc=f"Round {rnd} Clients",
-                               leave=False,
-                               unit="client"):
-                local_models.append(client.train(
-                    global_model=self.global_model,
-                    global_grads=global_grads
-                ))
-
-            # aggregate for FedAvg, FedProx, FedDANE
-            if self.config.algorithm in ("fedavg", "fedprox", "feddane"):
-                self.global_model = self.avg_models(self.global_model, local_models)
-
-            logging.info(f"⭑ Round {rnd} complete.")
-            self.evaluate()
+        for r in range(1, self.config.num_rounds + 1):
+            selected = self.select_clients()
+            local_models = self.train_clients(selected)
+            self.global_model = self.avg_grads(self.global_model, local_models)
+            acc = self.evaluate()
+            print(f"Round {r:3d} | Global Test Accuracy: {acc:.2f}%")
